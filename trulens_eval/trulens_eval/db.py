@@ -294,6 +294,7 @@ class LocalSQLite(DB):
             f'''CREATE TABLE IF NOT EXISTS {self.TABLE_RECORDS} (
                 record_id TEXT NOT NULL PRIMARY KEY,
                 app_id TEXT NOT NULL,
+                transcript_id TEXT,
                 input TEXT,
                 output TEXT,
                 record_json {self.TYPE_JSON} NOT NULL,
@@ -352,7 +353,7 @@ class LocalSQLite(DB):
         # within sqlite.
 
         vals = (
-            record.record_id, record.app_id, json_str_of_obj(record.main_input),
+            record.record_id, record.app_id, record.transcript_id, json_str_of_obj(record.main_input),
             json_str_of_obj(record.main_output), json_str_of_obj(record),
             record.tags, record.ts, json_str_of_obj(record.cost),
             json_str_of_obj(record.perf)
@@ -600,7 +601,7 @@ class LocalSQLite(DB):
 
         conn, c = self._connect()
         query = f"""
-            SELECT r.record_id, f.calls_json, f.result, f.name, f.multi_result
+            SELECT r.record_id, r.transcript_id, f.calls_json, f.result, f.name, f.multi_result
             FROM {self.TABLE_RECORDS} r 
             LEFT JOIN {self.TABLE_FEEDBACKS} f
                 ON r.record_id = f.record_id

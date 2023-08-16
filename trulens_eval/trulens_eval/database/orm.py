@@ -52,6 +52,7 @@ class Record(Base):
 
     record_id = Column(VARCHAR(256), nullable=False, primary_key=True)
     app_id = Column(VARCHAR(256), nullable=False)
+    transcript_id = Column(VARCHAR(256), nullable=True)
     input = Column(Text)
     output = Column(Text)
     record_json = Column(TYPE_JSON, nullable=False)
@@ -72,6 +73,7 @@ class Record(Base):
         return cls(
             record_id=obj.record_id,
             app_id=obj.app_id,
+            transcript_id=obj.transcript_id,
             input=json_str_of_obj(obj.main_input),
             output=json_str_of_obj(obj.main_output),
             record_json=json_str_of_obj(obj),

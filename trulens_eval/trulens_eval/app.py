@@ -635,7 +635,7 @@ class App(AppDefinition, SerialModel, WithInstrumentCallbacks):
 
         return ret, ret_record
 
-    def with_record(self, func, *args, **kwargs) -> Tuple[Any, Record]:
+    def with_record(self, func, *args, transcript_id=None, **kwargs) -> Tuple[Any, Record]:
         """
         Call the given instrumented function `func` with the given `args`,
         `kwargs`, producing its results as well as a record.
@@ -691,6 +691,7 @@ class App(AppDefinition, SerialModel, WithInstrumentCallbacks):
 
         ret_record_args = dict()
 
+        ret_record_args['transcript_id'] = transcript_id
         ret_record_args['main_input'] = jsonify(main_in)
 
         if ret is not None:
