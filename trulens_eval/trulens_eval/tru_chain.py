@@ -260,16 +260,11 @@ class TruChain(App):
 
     # NOTE: Input signature compatible with langchain.chains.base.Chain.__call__
     # TODEP
-    def call_with_record(self, *args, **kwargs) -> Tuple[Any, Record]:
+    def call_with_record(self, *args, transcript_id=None, **kwargs) -> Tuple[Any, Record]:
         """
         Run the chain call method and also return a record metadata object.
         """
-
-        self._with_dep_message(
-            method="__call__", is_async=False, with_record=True
-        )
-
-        return self.with_record(self.app.__call__, *args, **kwargs)
+        return self.with_record(self.app.__call__, *args, transcript_id=transcript_id**kwargs)
 
     # TODEP
     # Mimics Chain

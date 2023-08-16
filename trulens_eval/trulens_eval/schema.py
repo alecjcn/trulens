@@ -160,6 +160,7 @@ class Record(SerialModel):
     tags: Optional[str] = ""
     meta: Optional[JSON] = None
 
+    transcript_id: Optional[str] = None
     main_input: Optional[JSON] = None
     main_output: Optional[JSON] = None  # if no error
     main_error: Optional[JSON] = None  # if error
