@@ -34,6 +34,7 @@ import inspect
 from inspect import stack, signature
 import itertools
 import json
+import hashlib
 import logging
 from multiprocessing.context import TimeoutError
 from multiprocessing.pool import AsyncResult
@@ -370,6 +371,7 @@ def _clean_attributes(obj) -> Dict[str, Any]:
         ret[k] = v
 
     return ret
+
 
 
 # TODO: refactor to somewhere else or change instrument to a generic filter
@@ -1778,3 +1780,33 @@ def get_owner_of_method(cls, method_name) -> type:
     # TODO
 
     return cls
+
+def clean_json(json_str: str) -> str:
+    """
+    Remove the `__tru_non_serialized_object` key recursively from a JSON string.
+    """
+    # Convert the JSON string to a dictionary
+    data = json.loads(json_str)
+    
+    # Recursive function to clean the data
+    def recursive_clean(d):
+        if isinstance(d, dict):
+            if '__tru_non_serialized_object' in d:
+                del d['__tru_non_serialized_object']
+            for key in d:
+                recursive_clean(d[key])
+        elif isinstance(d, list):
+            for item in d:
+                recursive_clean(item)
+    
+    recursive_clean(data)
+    
+    # Convert the cleaned dictionary back to a JSON string
+    return json.dumps(data)
+
+def compute_app_id(json_representation: str) -> str:
+    """
+    Compute an app id from the JSON representation of an app.
+    """
+    json_representation = clean_json(json_representation)
+    return hashlib.sha256(json_representation.encode('utf-8')).hexdigest()

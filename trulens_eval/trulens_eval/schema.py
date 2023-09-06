@@ -41,6 +41,7 @@ from trulens_eval.util import Method
 from trulens_eval.util import obj_id_of_obj
 from trulens_eval.util import SerialModel
 from trulens_eval.util import WithClassInfo
+from trulens_eval.util import compute_app_id
 
 T = TypeVar("T")
 
@@ -481,9 +482,9 @@ class AppDefinition(SerialModel, WithClassInfo, ABC):
         kwargs['obj'] = self
 
         super().__init__(**kwargs)
-
         if app_id is None:
-            app_id = obj_id_of_obj(obj=self.dict(), prefix="app")
+            app_id = compute_app_id(self.json())
+            print(app_id)
 
         self.app_id = app_id
 
