@@ -328,7 +328,8 @@ class LocalSQLite(DB):
         c.execute(
             f'''CREATE TABLE IF NOT EXISTS {self.TABLE_APPS} (
                 app_id TEXT NOT NULL PRIMARY KEY,
-                app_json {self.TYPE_JSON} NOT NULL
+                app_json {self.TYPE_JSON} NOT NULL,
+                question TEXT
             )'''
         )
         self._close(conn)
@@ -371,8 +372,8 @@ class LocalSQLite(DB):
     def insert_app(self, app: AppDefinition) -> AppID:
         app_id = app.app_id
         app_str = app.json()
-
-        vals = (app_id, app_str)
+        app_question = app.question
+        vals = (app_id, app_str, app_question)
         self._insert_or_replace_vals(table=self.TABLE_APPS, vals=vals)
 
         print(f"{UNICODE_CHECK} app {app_id} -> {self.filename}")
@@ -621,7 +622,7 @@ class LocalSQLite(DB):
 
         conn, c = self._connect()
         query = f"""
-            SELECT DISTINCT r.*, c.app_json
+            SELECT DISTINCT r.*, c.app_json, c.question
             FROM {self.TABLE_RECORDS} r 
             JOIN {self.TABLE_APPS} c
                 ON r.app_id = c.app_id

@@ -25,10 +25,11 @@ class AppDefinition(Base):
 
     app_id = Column(VARCHAR(256), nullable=False, primary_key=True)
     app_json = Column(TYPE_JSON, nullable=False)
+    question = Column(Text, nullable=True)
 
     @classmethod
     def parse(cls, obj: schema.AppDefinition) -> "AppDefinition":
-        return cls(app_id=obj.app_id, app_json=obj.json())
+        return cls(app_id=obj.app_id, app_json=obj.json(), question=obj.question)
 
 
 class FeedbackDefinition(Base):

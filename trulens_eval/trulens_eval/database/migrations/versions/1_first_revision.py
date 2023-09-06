@@ -20,6 +20,7 @@ def upgrade() -> None:
     op.create_table(
         'apps', sa.Column('app_id', sa.VARCHAR(length=256), nullable=False),
         sa.Column('app_json', sa.Text(), nullable=False),
+        sa.Column('question', sa.Text(), nullable=True),
         sa.PrimaryKeyConstraint('app_id')
     )
     op.create_table(
