@@ -25,6 +25,7 @@ class AppDefinition(Base):
 
     app_id = Column(VARCHAR(256), nullable=False, primary_key=True)
     app_json = Column(TYPE_JSON, nullable=False)
+    question = Column(Text, nullable=True)
 
     @classmethod
     def parse(
@@ -34,7 +35,8 @@ class AppDefinition(Base):
     ) -> "AppDefinition":
         return cls(
             app_id=obj.app_id,
-            app_json=json_str_of_obj(obj, redact_keys=redact_keys)
+            app_json=json_str_of_obj(obj, redact_keys=redact_keys),
+            question=obj.question
         )
 
 

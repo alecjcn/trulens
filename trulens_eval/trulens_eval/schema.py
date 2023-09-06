@@ -452,6 +452,8 @@ class AppDefinition(SerialModel, WithClassInfo, ABC):
     # whatever the user might want to see about the app.
     app_extra_json: JSON
 
+    question: Optional[str]
+
     def jsonify_extra(self, content):
         # Called by jsonify for us to add any data we might want to add to the
         # serialization of `app`.
@@ -467,6 +469,7 @@ class AppDefinition(SerialModel, WithClassInfo, ABC):
         metadata: Optional[Metadata] = None,
         feedback_mode: FeedbackMode = FeedbackMode.WITH_APP_THREAD,
         app_extra_json: JSON = None,
+        question: Optional[str] = None,
         **kwargs
     ):
 
@@ -494,6 +497,10 @@ class AppDefinition(SerialModel, WithClassInfo, ABC):
         if metadata is None:
             metadata = {}
         self.metadata = metadata
+
+        if question is None:
+            question = ""
+        self.question = question
 
     def dict(self):
         return jsonify(self)
