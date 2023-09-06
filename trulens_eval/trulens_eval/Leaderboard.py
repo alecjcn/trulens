@@ -44,7 +44,7 @@ lms = tru.db
 
 def streamlit_app():
     # Set the title and subtitle of the app
-    st.title('App Leaderboard')
+    st.title('Question Leaderboard')
     st.write(
         'Average feedback values displayed in the range from 0 (worst) to 1 (best).'
     )
@@ -54,10 +54,16 @@ def streamlit_app():
         st.write("No records yet...")
         return
 
+    # Selecting top apps based on 'is_correct' feedback
+    grouped = df.groupby(['question', 'app_id'])['is_correct'].mean()
+    top_apps = grouped.groupby('question').idxmax().values
+    df = df[df.set_index(['question', 'app_id']).index.isin(top_apps)]
+    
     df = df.sort_values(by="app_id")
 
     if df.empty:
         st.write("No records yet...")
+        return
 
     apps = list(df.app_id.unique())
     st.markdown("""---""")
