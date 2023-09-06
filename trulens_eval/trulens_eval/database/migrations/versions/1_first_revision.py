@@ -49,6 +49,7 @@ def upgrade() -> None:
         'records',
         sa.Column('record_id', sa.VARCHAR(length=256), nullable=False),
         sa.Column('app_id', sa.VARCHAR(length=256), nullable=False),
+        sa.Column('transcript_id', sa.VARCHAR(length=256), nullable=True),
         sa.Column('input', sa.Text(), nullable=True),
         sa.Column('output', sa.Text(), nullable=True),
         sa.Column('record_json', sa.Text(), nullable=False),

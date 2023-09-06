@@ -101,7 +101,10 @@ def streamlit_app():
                 precision=2
             )
         )
+
+        print(app_df)
         for i, col_name in enumerate(feedback_col_names):
+            print(col_name)
             mean = app_df[col_name].mean()
 
             st.write(
@@ -113,13 +116,24 @@ def streamlit_app():
                 pass
 
             else:
-                cat = CATEGORY.of_score(mean)
+                if col_name in ['false_n', 'false_p']:
+                    cat = CATEGORY.of_score(1 - mean)
+                    if (mean) < 0.2:  # Replace SOME_THRESHOLD with an actual value
+                        adjective = 'low'
+                        delta_c = "normal"
+                    else:
+                        adjective = 'high'
+                        delta_c = "inverse"
+                else:
+                    cat = CATEGORY.of_score(mean)
+                    adjective = cat.adjective
+                    delta_c = "normal"if mean >= CATEGORY.PASS.threshold else "inverse"
+                print(cat, col_name)
                 feedback_cols[i].metric(
                     label=col_name,
                     value=f'{round(mean, 2)}',
-                    delta=f'{cat.icon} {cat.adjective}',
-                    delta_color="normal"
-                    if mean >= CATEGORY.PASS.threshold else "inverse"
+                    delta=f'{cat.icon} {adjective}',
+                    delta_color=delta_c
                 )
 
         with col99:

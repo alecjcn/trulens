@@ -147,6 +147,7 @@ else:
 
         gb.configure_column('record_id', header_name='Record ID', hide=True)
         gb.configure_column('app_id', header_name='App ID')
+        gb.configure_column('transcript_id', header_name='Transcript ID')
 
         gb.configure_column('feedback_id', header_name='Feedback ID', hide=True)
         gb.configure_column('input', header_name='User Input')
@@ -157,11 +158,11 @@ else:
         gb.configure_column('total_tokens', header_name='Total Tokens (#)')
         gb.configure_column('total_cost', header_name='Total Cost (USD)')
         gb.configure_column('latency', header_name='Latency (Seconds)')
-        gb.configure_column('tags', header_name='Tags')
-        gb.configure_column('ts', header_name='Time Stamp', sort="desc")
+        gb.configure_column('tags', header_name='Tags', hide=True)
+        gb.configure_column('ts', header_name='Time Stamp', hide=True)
 
         non_feedback_cols = [
-            'app_id', 'type', 'ts', 'total_tokens', 'total_cost', 'record_json',
+            'app_id', 'type', 'ts', 'transcript_id' ,'total_tokens', 'total_cost', 'record_json',
             'latency', 'record_id', 'app_id', 'cost_json', 'app_json', 'input',
             'output', 'perf_json'
         ]

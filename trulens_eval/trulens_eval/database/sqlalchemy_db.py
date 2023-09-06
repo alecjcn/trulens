@@ -286,7 +286,7 @@ def _extract_tokens_and_cost(cost_json: pd.Series) -> pd.DataFrame:
 class AppsExtractor:
     app_cols = ["app_id", "app_json", "type"]
     rec_cols = [
-        "record_id", "input", "output", "tags", "record_json", "cost_json",
+        "record_id", "transcript_id", "input", "output", "tags", "record_json", "cost_json",
         "perf_json", "ts"
     ]
     extra_cols = ["latency", "total_tokens", "total_cost"]
