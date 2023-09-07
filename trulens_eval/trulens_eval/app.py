@@ -680,7 +680,7 @@ class App(AppDefinition, SerialModel, WithInstrumentCallbacks):
             logger.error(traceback.format_exc())
         finally:
             end_time = datetime.now()
-
+        print(record)
         if len(record) == 0:
             logger.warning(
                 "No intrumented methods called. "

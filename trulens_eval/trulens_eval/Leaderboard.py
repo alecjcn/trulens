@@ -44,12 +44,18 @@ lms = tru.db
 
 
 def streamlit_app():
-    # Set the title and subtitle of the app
     st.title('Question Leaderboard')
-    st.write(
-        'Average feedback values displayed in the range from 0 (worst) to 1 (best).'
-    )
-    df, feedback_col_names = lms.get_records_and_feedback([])
+    st.write('Average feedback values displayed in the range from 0 (worst) to 1 (best).')
+
+    state = st.session_state
+
+    if 'all_records' not in state or 'feedback_cols' not in state:
+        df_results, feedback_cols = lms.get_records_and_feedback([])
+        state.all_records = df_results
+        state.feedback_cols = feedback_cols
+
+    df = state.all_records
+    feedback_col_names = state.feedback_cols
 
     if df.empty:
         st.write("No records yet...")
@@ -58,34 +64,24 @@ def streamlit_app():
     # Selecting top apps based on 'is_correct' feedback
     grouped = df.groupby(['question', 'app_id'])['is_correct'].mean()
     top_apps = grouped.groupby('question').idxmax().values
-    df = df[df.set_index(['question', 'app_id']).index.isin(top_apps)]
-    
-    df = df.sort_values(by="app_id")
 
-    if df.empty:
-        st.write("No records yet...")
-        return
-
-    apps = list(df.app_id.unique())
+    # Display leaderboard
     st.markdown("""---""")
+    
+    for question, app in top_apps:
+        app_df = df[(df['question'] == question) & (df['app_id'] == app)]
+        
+        # Display the question as header instead of app
+        st.header(question)
 
-    for app in apps:
-        app_df = df.loc[df.app_id == app]
-        if app_df.empty:
-            continue
-        app_str = app_df['app_json'].iloc[0]
-        app_json = json.loads(app_str)
-        metadata = app_json.get('metadata')
-        #st.text('Metadata' + str(metadata))
-        st.header(app, help=draw_metadata(metadata))
-        col1, col2, col3, col4, *feedback_cols, col99 = st.columns(
-            5 + len(feedback_col_names)
+        col1, col2, col3, col4, *feedback_cols, col_records, col_all_apps = st.columns(
+            6 + len(feedback_col_names)
         )
+
+        # Metrics computation and display
         latency_mean = app_df['latency'].apply(
             lambda td: td if td != MIGRATION_UNKNOWN_STR else None
         ).mean()
-
-        #app_df_feedback = df.loc[df.app_id == app]
 
         col1.metric("Records", len(app_df))
         col2.metric(
@@ -108,9 +104,7 @@ def streamlit_app():
             )
         )
 
-        print(app_df)
         for i, col_name in enumerate(feedback_col_names):
-            print(col_name)
             mean = app_df[col_name].mean()
 
             st.write(
@@ -120,7 +114,6 @@ def streamlit_app():
 
             if math.isnan(mean):
                 pass
-
             else:
                 if col_name in ['false_n', 'false_p']:
                     cat = CATEGORY.of_score(1 - mean)
@@ -133,8 +126,7 @@ def streamlit_app():
                 else:
                     cat = CATEGORY.of_score(mean)
                     adjective = cat.adjective
-                    delta_c = "normal"if mean >= CATEGORY.PASS.threshold else "inverse"
-                print(cat, col_name)
+                    delta_c = "normal" if mean >= CATEGORY.PASS.threshold else "inverse"
                 feedback_cols[i].metric(
                     label=col_name,
                     value=f'{round(mean, 2)}',
@@ -142,15 +134,25 @@ def streamlit_app():
                     delta_color=delta_c
                 )
 
-        with col99:
+        # Adding two buttons for each row
+        with col_records:
             if st.button('Select App', key=f"app-selector-{app}"):
+                st.session_state.question = question
                 st.session_state.app = app
                 switch_page('Evaluations')
+
+        with col_all_apps:
+            if st.button(f"View All Apps for {question}", key=f"all-apps-{question}"):
+                st.session_state.question = question
+                st.session_state.app = None
+                switch_page("Question")
+
+        st.markdown("""---""")
+            
 
         #with st.expander("Model metadata"):
         #    st.markdown(draw_metadata(metadata))
 
-        st.markdown("""---""")
 
 
 # Define the main function to run the app
