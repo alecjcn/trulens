@@ -19,11 +19,11 @@ st.runtime.legacy_caching.clear_cache()
 
 from trulens_eval import Tru
 from trulens_eval.ux import styles
-from trulens_eval.ux.components import draw_metadata
+from ux.components import draw_metadata
 
 st.set_page_config(page_title="Leaderboard", layout="wide")
 
-from trulens_eval.ux.add_logo import add_logo
+from ux.add_logo import add_logo
 
 add_logo()
 
@@ -41,12 +41,15 @@ except SystemExit as e:
 tru = Tru(database_url=args.database_url)
 lms = tru.db
 
+state = st.session_state
+state.tru = tru
+
 
 def streamlit_app():
     st.title('Question Leaderboard')
     st.write('Average feedback values displayed in the range from 0 (worst) to 1 (best).')
 
-    state = st.session_state
+    
 
     if 'all_records' not in state or 'feedback_cols' not in state:
         df_results, feedback_cols = lms.get_records_and_feedback([])
@@ -67,8 +70,8 @@ def streamlit_app():
     # Display leaderboard
     st.markdown("""---""")
     
-    for question, app in top_apps:
-        app_df = df[(df['question'] == question) & (df['app_id'] == app)]
+    for question, app_id in top_apps:
+        app_df = df[(df['question'] == question) & (df['app_id'] == app_id)]
         
         # Display the question as header instead of app
         st.header(question)
@@ -114,6 +117,7 @@ def streamlit_app():
             if math.isnan(mean):
                 pass
             else:
+                
                 if col_name in ['false_n', 'false_p']:
                     cat = CATEGORY.of_score(1 - mean)
                     if (mean) < 0.2:  # Replace SOME_THRESHOLD with an actual value
@@ -135,15 +139,15 @@ def streamlit_app():
 
         # Adding two buttons for each row
         with col_records:
-            if st.button('Select App', key=f"app-selector-{app}"):
-                st.session_state.question = question
-                st.session_state.app = app
-                switch_page('Evaluations')
+            if st.button('View Model Details', key=f"app-selector-{app_id}"):
+                state.question = question
+                state.app_id = app_id
+                switch_page('Model Details')
 
         with col_all_apps:
-            if st.button(f"View All Apps for {question}", key=f"all-apps-{question}"):
-                st.session_state.question = question
-                st.session_state.app = None
+            if st.button(f"View Other Models", key=f"all-apps-{question}"):
+                state.question = question
+                state.app_id = None
                 switch_page("Question")
 
         st.markdown("""---""")

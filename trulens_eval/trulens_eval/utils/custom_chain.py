@@ -3,19 +3,11 @@ from langchain.chains import LLMChain, TransformChain, SequentialChain
 from langchain.prompts.chat import ChatPromptTemplate, PromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.chat_models import ChatOpenAI
-from langchain.schema import BaseOutputParser, BasePromptTemplate, OutputParserException, PromptValue
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.output_parsers import PydanticOutputParser, RetryWithErrorOutputParser
-from trulens_eval import TruChain, Feedback, Huggingface, Tru, Provider, Select
+from langchain.output_parsers import PydanticOutputParser
+from trulens_eval import TruChain, Feedback, Tru, Provider, Select
 from pydantic import BaseModel, Field, validator
-from typing import Any, Dict, TypeVar
-import os
-import pandas as pd
-import chardet
-import glob
-import copy
-from customparsers import ChatRetryWithErrorOutputParser
-from transcriptprocessing import PhoneCall
+from trulens_eval.utils.customparsers import ChatRetryWithErrorOutputParser
+
 
 class Answer(BaseModel):
     '''Answer to a question about a transcript'''
@@ -32,7 +24,7 @@ class Answer(BaseModel):
     @validator("answer", pre=True, always=True)
     def set_and_invert_answer(cls, v, values):
         values["original_answer"] = v
-        if cls._invert_answer:
+        if cls.invert_answer:
             return not v
         return v
 
@@ -153,6 +145,5 @@ def create_tru_chain(answer_field_description, citation_field_description, syste
                         question=callminer_metric,
                         feedbacks=[f_correct,f_false_n,f_false_p],
                         tru=tru)
-    print(truchain)
     
     return truchain

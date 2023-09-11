@@ -22,6 +22,7 @@ from trulens_eval import Tru
 from trulens_eval.ux import styles
 from trulens_eval.ux.components import draw_metadata
 from trulens_eval.ux.add_logo import add_logo
+from time import sleep
 st.set_page_config(page_title="Question", layout="wide")
 
 st.runtime.legacy_caching.clear_cache()
@@ -33,6 +34,8 @@ tru = Tru()
 lms = tru.db
 
 if 'question' not in state:
+    st.write("No question selected yet. Please select one")
+    sleep(3.0)
     switch_page('Leaderboard')
 
 
@@ -62,8 +65,8 @@ sorted_apps = df.groupby('app_id')['is_correct'].mean().sort_values(ascending=Fa
 # Display leaderboard for the selected question
 st.markdown("""---""")
 
-for app in sorted_apps:
-    app_df = df[df['app_id'] == app]
+for app_id in sorted_apps:
+    app_df = df[df['app_id'] == app_id]
     
     # Display the question as header
     st.header(selected_question)
@@ -125,9 +128,9 @@ for app in sorted_apps:
 
     # Adding the button for each app to view its evaluations
     with col_records:
-        if st.button('Select App', key=f"app-selector-{app}"):
-            st.session_state.app = app
-            switch_page('Evaluations')
+        if st.button('Select App', key=f"app-selector-{app_id}"):
+            state.app_id = app_id
+            switch_page('Model Details')
 
     st.markdown("""---""")
 

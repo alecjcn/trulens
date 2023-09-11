@@ -1,6 +1,5 @@
 import difflib
 from enum import Enum
-import glob
 import os
 import pandas as pd
 import chardet
@@ -173,7 +172,7 @@ class PhoneCall:
                 self.roles[spk] = Role.TELE_MEDICINE_OPERATOR.get_label()
 
 
-true_values_path = "/Users/alec/Documents/trulens_testing/historic_data/cleaned/true_scores.csv"
+true_values_path = "/Users/alec/Documents/Documents - Alec’s MacBook Pro/trulens_testing/historic_data/cleaned/true_scores.csv"
 df_truth = pd.read_csv(true_values_path, dtype={'Answer': bool, 'Eureka ID': str, 'Question':str})
 
 # Initialize a dictionary to store errors
