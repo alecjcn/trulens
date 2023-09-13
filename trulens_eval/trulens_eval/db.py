@@ -363,7 +363,7 @@ class LocalSQLite(DB):
         # within sqlite.
 
         vals = (
-            record.record_id, record.app_id, record.transcript_id
+            record.record_id, record.app_id, record.transcript_id,
             self._json_str_of_obj(record.main_input),
             self._json_str_of_obj(record.main_output),
             self._json_str_of_obj(record), record.tags, record.ts,
