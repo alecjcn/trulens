@@ -40,6 +40,7 @@ from trulens_eval.utils.serial import GetItemOrAttribute
 from trulens_eval.utils.serial import JSON
 from trulens_eval.utils.serial import JSONPath
 from trulens_eval.utils.serial import SerialModel
+from trulens_eval.util import compute_app_id
 
 T = TypeVar("T")
 
