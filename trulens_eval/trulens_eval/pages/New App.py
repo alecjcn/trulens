@@ -35,13 +35,15 @@ if 'question' in state:
 else:
     default_question = None
 
-# Create a selectbox to allow the user to select the question
+selected_index = None
 if default_question is not None and default_question in question_info:
     selected_index = list(question_info.keys()).index(default_question)
+
 if selected_index is not None:
     callminer_metric = st.selectbox("Select Question Metric", list(question_info.keys()), key="question_metric", index=selected_index)
 else:
     callminer_metric = st.selectbox("Select Question Metric", list(question_info.keys()), key="question_metric")
+
 
 # Extract the question number and whether to invert the output from the question_info dictionary
 selected_question_info = question_info.get(callminer_metric)
@@ -127,6 +129,11 @@ performance_fig = go.FigureWidget(
 performance_fig.update_yaxes(range=[0, 100])
 
 pl = st.empty()
+
+# Before your loop
+if 'stop_execution' not in st.session_state:
+    st.session_state.stop_execution = False
+
 # Function to update the performance chart
 def update_performance_chart():
     accuracy = correct / total
@@ -140,19 +147,12 @@ pl.plotly_chart(performance_fig)
 
 state.model_finished = False
 if st.button("Run Chain"):
-    # st.write("Callminer Metric: ", callminer_metric)
-    # st.write("Question Number: ", question_number)
-    # st.write("Invert Answer: ", invert_answer)
-    # st.write("System Message: ", system_message)
-    # st.write("Question: ", question)
-    # st.write("Temperature: ", temperature)
-    # st.write("Model: ", model)
-    # st.write("Answer Field Description: ", answer_field_description)
-    # st.write("Citation Field Description: ", citation_field_description)
-    # st.write("Total: ", total)
-    # st.write("Correct: ", correct)
-    # st.write("False Negative: ", false_n)
-    # st.write("False Positive: ", false_p)
+    st.write("system_message: ", system_message)
+    st.write("question: ", question)
+    st.write("callminer_metric: ", callminer_metric)
+    st.write("invert_answer: ", invert_answer)
+    st.write("model: ", model)
+    st.write("temperature: ", temperature)
 
     # Combine the user's message with the format_instructions
     system_message = system_message + "\n\n{format_instructions}"
@@ -161,6 +161,9 @@ if st.button("Run Chain"):
     truchain = create_tru_chain(answer_field_description=answer_field_description, citation_field_description=citation_field_description, system_message=system_message, 
                                 question=question, callminer_metric=callminer_metric, invert_answer=invert_answer, 
                                 model=model, temperature=temperature)
+    
+    # st.write("truchain: ", truchain)
+    
     # st.session_state.tru.add_app(app=truchain)
 
     transcripts_path = "/Users/alec/Documents/Documents - Alec’s MacBook Pro/trulens_testing/transcripts"
@@ -176,14 +179,14 @@ if st.button("Run Chain"):
         
         try:
             labeled_transcript, answer, eureka_id = label_transcript(file_path, question_number)
-            # Display the first couple of lines of the labeled_transcript
-            # first_few_lines = '\n'.join(labeled_transcript.split('\n')[:2])  # Adjust the number '2' to display more or fewer lines
-            # st.write(f"First few lines of {os.path.basename(file_path)}:\n{first_few_lines}")
-            # st.write(f"true answer: {answer}")
-            # st.write(f"eureka_id: {eureka_id}")
+            print("answer: ", answer)
+            print("eureka_id: ", eureka_id)
+            print("label_transcript: ", labeled_transcript)
             
-            response, rec = truchain.call_with_record({"transcript": labeled_transcript, "expected_value": answer}, transcript_id= eureka_id)
+            response, rec = truchain.call_with_record({"transcript": labeled_transcript, "expected_value": answer}, transcript_id=eureka_id)
+            print("response: ", response)
             is_correct = rec.main_output['answer'] == answer
+            print("is_correct: ", is_correct)
 
             if is_correct:
                 correct += 1
@@ -192,28 +195,19 @@ if st.button("Run Chain"):
             else:
                 false_p += 1
             total += 1
-
             
             update_performance_chart()
-            # st.text(f"Accuracy: {accuracy}")
-            # st.text(f"False Negative Rate: {false_n_rate}")
-            # st.text(f"False Positive Rate: {false_p_rate}")
-            # st.write(f"llm_answer: {rec.main_output['answer']}")
-            # st.write(f"llm_citation: {rec.main_output['citation']}")
-            # st.write(f"is correct: {rec.main_output['answer'] == answer}")
-            # # Copy the successful transcript to the new folder
-            # shutil.copy(file_path, new_transcripts_path)
             
         except Exception as e:
             # Handle the error and continue with the next file
-            st.write(f"Error processing file {file_path}: {e}")
+            print(f"Error processing file {file_path}: {e}")
 
-        if total == 80:
+        if total == 6:
             total = 0
             correct = 0
             false_n = 0
             false_p = 0
-
+            state.model_finished = True
             break
 
 if state.model_finished:

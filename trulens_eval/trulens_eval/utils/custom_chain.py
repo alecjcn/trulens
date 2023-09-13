@@ -13,24 +13,26 @@ class Answer(BaseModel):
     '''Answer to a question about a transcript'''
 
     # class variables for dynamic descriptions
-    answer_desc = "true/false answer to the provided question"
-    citation_desc = "citation from transcript of marketer if answer is True"
-    invert_answer = False
+    # answer_desc = "true/false answer to the provided question"
+    # citation_desc = "citation from transcript of marketer if answer is true"
+    
 
-    original_answer: bool = Field(..., description="Original LLM answer")
-    answer: bool = Field(..., description="Processed answer (may be inverted)")
-    citation: str = Field(..., description="Dynamic description will be set")
+    _original_answer: bool = Field(..., description="Original LLM answer", alias="original_answer")
+    answer: bool = Field(..., description="true/false answer to the provided question")
+    citation: str = Field(..., description="citation from transcript if answer is true")
+
+    invert_answer = False
 
     @validator("answer", pre=True, always=True)
     def set_and_invert_answer(cls, v, values):
-        values["original_answer"] = v
+        values["_original_answer"] = v
         if cls.invert_answer:
             return not v
         return v
 
     @validator("citation", always=True)
     def true_answers_have_citation(cls, citation, values):
-        original_answer = values.get('original_answer')
+        original_answer = values.get('_original_answer')
         if original_answer is True:
             if not citation or citation.strip() == "":
                 raise ValueError("You previously answered true, but did not provide a citation from the provided transcript.")
@@ -59,8 +61,8 @@ class Accuracy_positive(Provider):
 
 def create_tru_chain(answer_field_description, citation_field_description, system_message, question, callminer_metric ,invert_answer, model, temperature):
 
-    Answer.answer_desc = answer_field_description
-    Answer.citation_desc = citation_field_description
+    # Answer.answer_desc = answer_field_description
+    # Answer.citation_desc = citation_field_description
     Answer.invert_answer = invert_answer
 
     # intialize the parser
@@ -94,8 +96,6 @@ def create_tru_chain(answer_field_description, citation_field_description, syste
     user_prompt_template = HumanMessagePromptTemplate(prompt=user_full_template)
 
     chat_template = ChatPromptTemplate.from_messages([system_prompt_template, user_prompt_template])
-
-    print(chat_template)
 
     # define the model, and the llm chain
     chat = ChatOpenAI(temperature=temperature,model=model,verbose=True)
@@ -145,5 +145,6 @@ def create_tru_chain(answer_field_description, citation_field_description, syste
                         question=callminer_metric,
                         feedbacks=[f_correct,f_false_n,f_false_p],
                         tru=tru)
+    print("truchain created")
     
     return truchain
