@@ -5,6 +5,7 @@ from trulens_eval.utils.transcriptprocessing import label_transcript
 from trulens_eval import Tru
 import glob
 import os
+import pandas as pd
 from streamlit_extras.switch_page_button import switch_page
 import plotly.graph_objects as go
 from trulens_eval.utils.shared_info import (
@@ -40,9 +41,9 @@ if default_question is not None and default_question in question_info:
     selected_index = list(question_info.keys()).index(default_question)
 
 if selected_index is not None:
-    callminer_metric = st.selectbox("Select Question Metric", list(question_info.keys()), key="question_metric", index=selected_index)
+    callminer_metric = st.selectbox("Select Question", list(question_info.keys()), key="question_metric", index=selected_index)
 else:
-    callminer_metric = st.selectbox("Select Question Metric", list(question_info.keys()), key="question_metric")
+    callminer_metric = st.selectbox("Select Question", list(question_info.keys()), key="question_metric")
 
 
 # Extract the question number and whether to invert the output from the question_info dictionary
@@ -69,7 +70,7 @@ system_message_default = (
 system_message = st.text_area("System Message", system_message_default)
 
 # Create a text area for the question
-question = st.text_area("Question", value="", placeholder= "Enter your question here...")
+prompt_question = st.text_area("Question", value="", placeholder= "Enter your question here...")
 
 # Write instructions for the user regarding the invert_answer checkbox
 st.write(
@@ -148,7 +149,7 @@ pl.plotly_chart(performance_fig)
 state.model_finished = False
 if st.button("Run Chain"):
     st.write("system_message: ", system_message)
-    st.write("question: ", question)
+    st.write("question: ", prompt_question)
     st.write("callminer_metric: ", callminer_metric)
     st.write("invert_answer: ", invert_answer)
     st.write("model: ", model)
@@ -158,21 +159,12 @@ if st.button("Run Chain"):
     system_message = system_message + "\n\n{format_instructions}"
 
     # create truchain app
-    truchain = create_tru_chain(answer_field_description=answer_field_description, citation_field_description=citation_field_description, system_message=system_message, 
-                                question=question, callminer_metric=callminer_metric, invert_answer=invert_answer, 
-                                model=model, temperature=temperature)
-    
-    # st.write("truchain: ", truchain)
-    
-    # st.session_state.tru.add_app(app=truchain)
+    truchain = create_tru_chain(system_message=system_message, question=prompt_question, 
+                                callminer_metric=callminer_metric, 
+                                model=model, temperature=temperature,tru=tru)
 
     transcripts_path = "/Users/alec/Documents/Documents - Alec’s MacBook Pro/trulens_testing/transcripts"
     txt_files = glob.glob(os.path.join(transcripts_path, '*.txt'))
-
-
-    # Initialize a dictionary to store errors
-    # The keys will be file names, and the values will be error messages
-    error_dict = {}
 
     # iterate over files in directory
     for file_path in txt_files:
@@ -181,10 +173,8 @@ if st.button("Run Chain"):
             labeled_transcript, answer, eureka_id = label_transcript(file_path, question_number)
             print("answer: ", answer)
             print("eureka_id: ", eureka_id)
-            print("label_transcript: ", labeled_transcript)
             
-            response, rec = truchain.call_with_record({"transcript": labeled_transcript, "expected_value": answer}, transcript_id=eureka_id)
-            print("response: ", response)
+            response, rec = truchain.call_with_record({"transcript": labeled_transcript, "expected_value": answer, 'invert_answer': invert_answer}, record_metadata= {'transcript_id': eureka_id})
             is_correct = rec.main_output['answer'] == answer
             print("is_correct: ", is_correct)
 
@@ -201,17 +191,26 @@ if st.button("Run Chain"):
         except Exception as e:
             # Handle the error and continue with the next file
             print(f"Error processing file {file_path}: {e}")
+            break
 
-        if total == 6:
+        if total == 8:
             total = 0
             correct = 0
             false_n = 0
             false_p = 0
             state.model_finished = True
+            if 'all_records' not in state or 'feedback_cols' not in state:
+                df_results, feedback_cols = lms.get_records_and_feedback([])
+                state.all_records = df_results
+                state.feedback_cols = feedback_cols
+            else:
+                df_results, feedback_cols = lms.get_records_and_feedback([rec.app_id])
+                state.all_records = pd.concat([state.all_records, df_results], ignore_index=True)
             break
 
 if state.model_finished:
     if st.button("View Model Details"):
         state.app_id = truchain.app_id
+        state.question = callminer_metric
         switch_page('Model Details')
         

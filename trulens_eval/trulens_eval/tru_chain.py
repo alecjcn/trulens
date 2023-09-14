@@ -19,7 +19,6 @@ from trulens_eval.utils.imports import REQUIREMENT_LANGCHAIN
 from trulens_eval.utils.langchain import WithFeedbackFilterDocuments
 from trulens_eval.utils.pyschema import Class
 from trulens_eval.utils.pyschema import FunctionOrMethod
-from trulens_eval.util import compute_app_id
 from typing import Any, Callable, ClassVar, Dict, List, Tuple
 
 logger = logging.getLogger(__name__)
@@ -262,11 +261,11 @@ class TruChain(App):
 
     # NOTE: Input signature compatible with langchain.chains.base.Chain.__call__
     # TODEP
-    def call_with_record(self, *args, transcript_id=None, **kwargs) -> Tuple[Any, Record]:
+    def call_with_record(self, *args, **kwargs) -> Tuple[Any, Record]:
         """
         Run the chain call method and also return a record metadata object.
         """
-        return self.with_record(self.app.__call__, *args, transcript_id=transcript_id**kwargs)
+        return self.with_record(self.app.__call__, *args, **kwargs)
 
     # TODEP
     # Mimics Chain

@@ -16,24 +16,13 @@ class Answer(BaseModel):
     # answer_desc = "true/false answer to the provided question"
     # citation_desc = "citation from transcript of marketer if answer is true"
     
-
-    _original_answer: bool = Field(..., description="Original LLM answer", alias="original_answer")
     answer: bool = Field(..., description="true/false answer to the provided question")
     citation: str = Field(..., description="citation from transcript if answer is true")
 
-    invert_answer = False
-
-    @validator("answer", pre=True, always=True)
-    def set_and_invert_answer(cls, v, values):
-        values["_original_answer"] = v
-        if cls.invert_answer:
-            return not v
-        return v
-
     @validator("citation", always=True)
     def true_answers_have_citation(cls, citation, values):
-        original_answer = values.get('_original_answer')
-        if original_answer is True:
+        answer = values.get('answer')
+        if answer is True:
             if not citation or citation.strip() == "":
                 raise ValueError("You previously answered true, but did not provide a citation from the provided transcript.")
         return citation
@@ -59,17 +48,12 @@ class Accuracy_positive(Provider):
         else:
             return 0.
 
-def create_tru_chain(answer_field_description, citation_field_description, system_message, question, callminer_metric ,invert_answer, model, temperature):
-
-    # Answer.answer_desc = answer_field_description
-    # Answer.citation_desc = citation_field_description
-    Answer.invert_answer = invert_answer
+def create_tru_chain(system_message, question, callminer_metric, model, temperature, tru):
 
     # intialize the parser
     pydantic_parser = PydanticOutputParser(pydantic_object=Answer)
 
-    # intialize the message prompt templates
-    # Define the prompt templates
+    # Define the system prompt templates
     system_template = PromptTemplate(
         template=system_message,
         input_variables=[],
@@ -77,14 +61,7 @@ def create_tru_chain(answer_field_description, citation_field_description, syste
     )
     system_prompt_template = SystemMessagePromptTemplate(prompt=system_template)
 
-    system_template = PromptTemplate(
-        template=system_message,
-        input_variables=[],
-        partial_variables={"format_instructions": pydantic_parser.get_format_instructions()}
-    )
-
-    system_prompt_template = SystemMessagePromptTemplate(prompt=system_template)
-
+    # Define the user prompt templates
     user_message = '''
     """{transcript}"""
     Question: {question}'''
@@ -95,13 +72,14 @@ def create_tru_chain(answer_field_description, citation_field_description, syste
     )
     user_prompt_template = HumanMessagePromptTemplate(prompt=user_full_template)
 
+    # Define the chat template
     chat_template = ChatPromptTemplate.from_messages([system_prompt_template, user_prompt_template])
 
     # define the model, and the llm chain
-    chat = ChatOpenAI(temperature=temperature,model=model,verbose=True)
-
+    chat = ChatOpenAI(temperature=temperature,model=model)
     llm_chain = LLMChain(llm=chat, prompt=chat_template, output_key="json_string")
 
+    # define the retry parser
     parser = ChatRetryWithErrorOutputParser.from_llm(parser=pydantic_parser, llm=chat, prompt=chat_template)
 
     # define the transformation
@@ -109,11 +87,12 @@ def create_tru_chain(answer_field_description, citation_field_description, syste
         text = inputs['json_string']
         transcript = inputs['transcript']
         expected_value = inputs['expected_value']
+        invert_answer = inputs['invert_answer']
         parsed_answer = parser.parse_with_prompt(text, {'transcript': transcript})  # Assume this returns an instance of the Answer class
         
         # Construct the output dictionary
         output = {
-            'answer': parsed_answer.answer,
+            'answer': invert_answer ^ parsed_answer.answer,
             'citation': parsed_answer.citation,
             'expected_value': expected_value,
         }
@@ -121,14 +100,14 @@ def create_tru_chain(answer_field_description, citation_field_description, syste
 
     # define the transform chain
     transformChain = TransformChain(
-        input_variables=['json_string', 'transcript', 'expected_value'],
+        input_variables=['json_string', 'transcript', 'expected_value', 'invert_answer'],
         output_variables=['result'],
         transform=parse_outputs
     )
 
     # define the full chain
     chain = SequentialChain(
-        input_variables=['transcript', 'expected_value'],
+        input_variables=['transcript', 'expected_value', 'invert_answer'],
         output_variables=['result'],
         chains=[llm_chain, transformChain],
     )
@@ -139,12 +118,13 @@ def create_tru_chain(answer_field_description, citation_field_description, syste
     f_false_p = Feedback(custom.false_p).on(Select.Record.main_output)
     f_false_n = Feedback(custom.false_n).on(Select.Record.main_output)
 
-    tru = Tru()
+
     # wrap the chain in a truchain to record the results
     truchain = TruChain(chain,
                         question=callminer_metric,
                         feedbacks=[f_correct,f_false_n,f_false_p],
                         tru=tru)
-    print("truchain created")
+    
+    print("truchain created!!!")
     
     return truchain

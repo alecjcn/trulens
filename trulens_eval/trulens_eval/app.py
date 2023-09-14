@@ -697,6 +697,7 @@ class App(AppDefinition, SerialModel, WithInstrumentCallbacks, Hashable):
                 perf=perf,
                 app_id=self.app_id,
                 tags=self.tags,
+                transcript_id = record_metadata['transcript_id'],
                 meta=jsonify(record_metadata)
             )
 
